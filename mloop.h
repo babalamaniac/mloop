@@ -48,6 +48,7 @@ struct loop_device {
 
 	struct file *	lo_backing_file;
 	bool            multi_file_enabled;
+	int 		file_seg_size;
 	struct file **	lo_backing_files;
 	struct block_device *lo_device;
 	void		*key_data; 
