@@ -292,9 +292,20 @@ static int lo_write_simple(struct loop_device *lo, struct request *rq,
 	struct bio_vec bvec;
 	struct req_iterator iter;
 	int ret = 0;
+	int file_seg_size = lo->file_seg_size;
+	loff_t offset;
+	struct file * file = lo->lo_backing_file;
 
 	rq_for_each_segment(bvec, rq, iter) {
-		ret = lo_write_bvec(lo->lo_backing_file, &bvec, &pos);
+		if (lo->multi_file_enabled) {
+			offset = iter.iter.bi_sector << 9;
+            		if ((bvec.bv_len + offset) / file_seg_size != offset / file_seg_size)
+            		{
+                		bvec.bv_len = (offset / file_seg_size + 1) * file_seg_size - offset;
+            		}
+            		file = lo->lo_backing_files[offset / file_seg_size];
+		}
+		ret = lo_write_bvec(file, &bvec, &pos);
 		if (ret < 0)
 			break;
 		cond_resched();
@@ -345,10 +356,21 @@ static int lo_read_simple(struct loop_device *lo, struct request *rq,
 	struct req_iterator iter;
 	struct iov_iter i;
 	ssize_t len;
+	int file_seg_size = lo->file_seg_size;
+	loff_t offset;
+	struct file * file = lo->lo_backing_file;
 
 	rq_for_each_segment(bvec, rq, iter) {
+		if (lo->multi_file_enabled) {
+			offset = iter.iter.bi_sector << 9;
+            		if ((bvec.bv_len + offset) / file_seg_size != offset / file_seg_size)
+            		{
+                		bvec.bv_len = (offset / file_seg_size + 1) * file_seg_size - offset;
+            		}
+            		file = lo->lo_backing_files[offset / file_seg_size];
+		}
 		iov_iter_bvec(&i, READ, &bvec, 1, bvec.bv_len);
-		len = vfs_iter_read(lo->lo_backing_file, &i, &pos, 0);
+		len = vfs_iter_read(file, &i, &pos, 0);
 		if (len < 0)
 			return len;
 
