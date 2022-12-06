@@ -79,7 +79,7 @@
 #include <linux/ioprio.h>
 #include <linux/blk-cgroup.h>
 
-#include "loop.h"
+#include "mloop.h"
 
 #include <linux/uaccess.h>
 
@@ -259,7 +259,7 @@ lo_do_transfer(struct loop_device *lo, int cmd,
 		return 0;
 
 	printk_ratelimited(KERN_ERR
-		"loop: Transfer error at byte offset %llu, length %i.\n",
+		"mloop: Transfer error at byte offset %llu, length %i.\n",
 		(unsigned long long)rblock << 9, size);
 	return ret;
 }
@@ -279,7 +279,7 @@ static int lo_write_bvec(struct file *file, struct bio_vec *bvec, loff_t *ppos)
 		return 0;
 
 	printk_ratelimited(KERN_ERR
-		"loop: Write error at byte offset %llu, length %i.\n",
+		"mloop: Write error at byte offset %llu, length %i.\n",
 		(unsigned long long)*ppos, bvec->bv_len);
 	if (bw >= 0)
 		bw = -EIO;
@@ -852,7 +852,7 @@ static struct attribute *loop_attrs[] = {
 };
 
 static struct attribute_group loop_attribute_group = {
-	.name = "loop",
+	.name = "mloop",
 	.attrs= loop_attrs,
 };
 
@@ -915,7 +915,7 @@ static int loop_prepare_queue(struct loop_device *lo)
 {
 	kthread_init_worker(&lo->worker);
 	lo->worker_task = kthread_run(loop_kthread_worker_fn,
-			&lo->worker, "loop%d", lo->lo_number);
+			&lo->worker, "mloop%d", lo->lo_number);
 	if (IS_ERR(lo->worker_task))
 		return -ENOMEM;
 	set_user_nice(lo->worker_task, MIN_NICE);
@@ -2079,7 +2079,7 @@ static int loop_add(struct loop_device **l, int i)
 	disk->fops		= &lo_fops;
 	disk->private_data	= lo;
 	disk->queue		= lo->lo_queue;
-	sprintf(disk->disk_name, "loop%d", i);
+	sprintf(disk->disk_name, "mloop%d", i);
 	add_disk(disk);
 	*l = lo;
 	return lo->lo_number;
@@ -2220,7 +2220,7 @@ static const struct file_operations loop_ctl_fops = {
 
 static struct miscdevice loop_misc = {
 	.minor		= LOOP_CTRL_MINOR,
-	.name		= "loop-control",
+	.name		= "mloop-control",
 	.fops		= &loop_ctl_fops,
 };
 
@@ -2280,7 +2280,7 @@ static int __init loop_init(void)
 		goto err_out;
 
 
-	if (register_blkdev(LOOP_MAJOR, "loop")) {
+	if (register_blkdev(LOOP_MAJOR, "mloop")) {
 		err = -EIO;
 		goto misc_out;
 	}
@@ -2294,7 +2294,7 @@ static int __init loop_init(void)
 		loop_add(&lo, i);
 	mutex_unlock(&loop_ctl_mutex);
 
-	printk(KERN_INFO "loop: module loaded\n");
+	printk(KERN_INFO "mloop: module loaded\n");
 	return 0;
 
 misc_out:
@@ -2321,7 +2321,7 @@ static void __exit loop_exit(void)
 	idr_destroy(&loop_index_idr);
 
 	blk_unregister_region(MKDEV(LOOP_MAJOR, 0), range);
-	unregister_blkdev(LOOP_MAJOR, "loop");
+	unregister_blkdev(LOOP_MAJOR, "mloop");
 
 	misc_deregister(&loop_misc);
 }
