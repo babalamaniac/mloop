@@ -662,7 +662,7 @@ static inline int is_loop_device(struct file *file)
 {
 	struct inode *i = file->f_mapping->host;
 
-	return i && S_ISBLK(i->i_mode) && MAJOR(i->i_rdev) == LOOP_MAJOR;
+	return i && S_ISBLK(i->i_mode) && MAJOR(i->i_rdev) == MLOOP_MAJOR;
 }
 
 static int loop_validate_file(struct file *file, struct block_device *bdev)
@@ -1870,7 +1870,7 @@ MODULE_PARM_DESC(max_loop, "Maximum number of loop devices");
 module_param(max_part, int, 0444);
 MODULE_PARM_DESC(max_part, "Maximum number of partitions per loop device");
 MODULE_LICENSE("GPL");
-MODULE_ALIAS_BLOCKDEV_MAJOR(LOOP_MAJOR);
+MODULE_ALIAS_BLOCKDEV_MAJOR(MLOOP_MAJOR);
 
 int loop_register_transfer(struct loop_func_table *funcs)
 {
@@ -2074,7 +2074,7 @@ static int loop_add(struct loop_device **l, int i)
 	atomic_set(&lo->lo_refcnt, 0);
 	lo->lo_number		= i;
 	spin_lock_init(&lo->lo_lock);
-	disk->major		= LOOP_MAJOR;
+	disk->major		= MLOOP_MAJOR;
 	disk->first_minor	= i << part_shift;
 	disk->fops		= &lo_fops;
 	disk->private_data	= lo;
@@ -2280,12 +2280,12 @@ static int __init loop_init(void)
 		goto err_out;
 
 
-	if (register_blkdev(LOOP_MAJOR, "mloop")) {
+	if (register_blkdev(MLOOP_MAJOR, "mloop")) {
 		err = -EIO;
 		goto misc_out;
 	}
 
-	blk_register_region(MKDEV(LOOP_MAJOR, 0), range,
+	blk_register_region(MKDEV(MLOOP_MAJOR, 0), range,
 				  THIS_MODULE, loop_probe, NULL, NULL);
 
 	/* pre-create number of devices given by config or max_loop */
@@ -2320,8 +2320,8 @@ static void __exit loop_exit(void)
 	idr_for_each(&loop_index_idr, &loop_exit_cb, NULL);
 	idr_destroy(&loop_index_idr);
 
-	blk_unregister_region(MKDEV(LOOP_MAJOR, 0), range);
-	unregister_blkdev(LOOP_MAJOR, "mloop");
+	blk_unregister_region(MKDEV(MLOOP_MAJOR, 0), range);
+	unregister_blkdev(MLOOP_MAJOR, "mloop");
 
 	misc_deregister(&loop_misc);
 }
