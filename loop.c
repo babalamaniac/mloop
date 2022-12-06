@@ -1575,6 +1575,38 @@ out_unfreeze:
 	return err;
 }
 
+static int lo_set_multi_file_capacity(struct loop_device *lo, unsigned int nums)
+{
+	if (lo->file_seg_nums > nums) {
+		return -1;
+	}
+	struct file ** files = vmalloc(sizeof(struct file *)) * nums;
+	if (lo->lo_backing_files) {
+		memcpy(files, lo->lo_backing_files, sizeof(struct file *) * lo->file_nums);
+		kfree(lo->lo_backing_files);
+	}
+	lo->lo_backing_files = files;
+	lo->file_seg_cap = nums;
+	return 0;
+}
+
+static int lo_add_multi_file(struct loop_device *lo)
+{
+	struct file * file = lo->lo_backing_file;
+	if (!file) {
+		return -1;
+	}
+	if (lo->file_seg_cap == lo->file_seg_nums) {
+		return -1;
+	}
+	file = fget(file->fd);
+	if (!file) {
+		return -1;
+	}
+	lo->lo_backing_files[lo->file_seg_nums++] = file;
+	return 0;
+}
+
 static int lo_simple_ioctl(struct loop_device *lo, unsigned int cmd,
 			   unsigned long arg)
 {
@@ -2225,7 +2257,7 @@ static struct miscdevice loop_misc = {
 };
 
 MODULE_ALIAS_MISCDEV(LOOP_CTRL_MINOR);
-MODULE_ALIAS("devname:loop-control");
+MODULE_ALIAS("devname:mloop-control");
 
 static int __init loop_init(void)
 {
