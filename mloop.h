@@ -17,7 +17,8 @@
 #include <linux/kthread.h>
 #include <uapi/linux/loop.h>
 
-#deine MLOOP_MAJOR 36
+#define MLOOP_MAJOR 36
+#define LOOP_CTRL_MINOR 37
 /* Possible states of device */
 enum {
 	Lo_unbound,
@@ -48,9 +49,6 @@ struct loop_device {
 				 unsigned long arg); 
 
 	struct file *	lo_backing_file;
-	bool            multi_file_enabled;
-	int 		file_seg_size;
-	struct file **	lo_backing_files;
 	struct block_device *lo_device;
 	void		*key_data; 
 
@@ -66,6 +64,12 @@ struct loop_device {
 	struct request_queue	*lo_queue;
 	struct blk_mq_tag_set	tag_set;
 	struct gendisk		*lo_disk;
+	
+	bool            multi_file_enabled;
+	int 		file_seg_size;
+	int		file_seg_nums;
+	int 		file_seg_cap;
+	struct file **	lo_backing_files;
 };
 
 struct loop_cmd {
