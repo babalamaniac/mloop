@@ -6,8 +6,8 @@
  * Copyright 1993 by Theodore Ts'o.  Redistribution of this file is
  * permitted under the GNU General Public License.
  */
-#ifndef _LINUX_LOOP_H
-#define _LINUX_LOOP_H
+#ifndef _LINUX_MLOOP_H
+#define _LINUX_MLOOP_H
 
 #include <linux/bio.h>
 #include <linux/blkdev.h>
@@ -17,6 +17,7 @@
 #include <linux/kthread.h>
 #include <uapi/linux/loop.h>
 
+#deine MLOOP_MAJOR 36
 /* Possible states of device */
 enum {
 	Lo_unbound,
